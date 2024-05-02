@@ -7,6 +7,25 @@
 
 ---
 
+## 2024-05-02
+
+채널 전체 조회 부분에서 빈 배열을 만들고 `push()` 메서드를 쓰는 대신에, 아래와 같이 한번에 만들어 보았다.
+
+```javascript
+/** @type {Map<number, { title: string }>} */
+const channels = new Map();
+// ...
+app
+  .route('/channels')
+  .get((req, res) => {
+    if (channels.size) {
+      const allChannels = Array.from(channels, ([, record]) => record);
+      res.status(200).json(allChannels);
+// ...
+```
+
+---
+
 ## 2024-05-01
 
 > #### Express 실습 내용
