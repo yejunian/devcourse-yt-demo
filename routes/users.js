@@ -1,23 +1,12 @@
 const express = require('express');
-const app = express();
-app.listen(7777);
-app.use(express.json());
+const router = express.Router();
 
-/** @type {Map<number, { userID: string, password: string, name: string }>} */
+router.use(express.json());
+
+/** @type {Map<string, { userID: string, password: string, name: string }>} */
 const users = new Map();
-let id = 1;
 
-function findUser(userID) {
-  for (const [key, user] of users) {
-    if (user.userID === userID) {
-      return [key, user];
-    }
-  }
-
-  return [];
-}
-
-app.post('/login', (req, res) => {
+router.post('/login', (req, res) => {
   const { userID, password } = req.body || {};
 
   if (!userID) {
@@ -28,7 +17,7 @@ app.post('/login', (req, res) => {
     return;
   }
 
-  const [, user] = findUser(userID);
+  const user = users.get(userID);
   const success = user && userID === user.userID && password === user.password;
 
   if (!success) {
@@ -41,7 +30,7 @@ app.post('/login', (req, res) => {
   res.status(200).json({ message: `${user.name}님 환영합니다.` });
 });
 
-app.post('/users', (req, res) => {
+router.post('/users', (req, res) => {
   const { userID, password, name } = req.body || {};
 
   if (!userID) {
@@ -55,41 +44,35 @@ app.post('/users', (req, res) => {
     return;
   }
 
-  const [, foundUserID] = findUser(userID);
-
-  if (foundUserID) {
+  if (users.get(userID)) {
     res.status(400).json({ message: '동일한 아이디가 이미 존재합니다.' });
     return;
   }
 
-  users.set(id++, { userID, password, name });
+  users.set(userID, { userID, password, name });
 
   res.status(201).json({ message: `${name}님 환영합니다.` });
 });
 
-app
-  .route('/users/:userID')
+router
+  .route('/users')
 
   .get((req, res) => {
-    const { userID } = req.params;
-    const [, user] = findUser(req.params.userID);
+    const user = users.get(req.body.userID);
 
     if (!user) {
-      res
-        .status(404)
-        .json({ message: `${userID}는 존재하지 않는 아이디입니다.` });
+      res.status(404).json({ message: '사용자 아이디가 존재하지 않습니다.' });
       return;
     }
 
-    res.json({
+    res.status(200).json({
       userID: user.userID,
       name: user.name,
     });
   })
 
   .delete((req, res) => {
-    const { userID } = req.params;
-    const { password } = req.body ?? {};
+    const { userID, password } = req.body ?? {};
 
     if (!userID) {
       res.status(400).json({ message: '아이디를 입력하세요.' });
@@ -99,7 +82,7 @@ app
       return;
     }
 
-    const [dbID, user] = findUser(userID);
+    const user = users.get(userID);
     const success =
       user && userID === user.userID && password === user.password;
 
@@ -110,7 +93,9 @@ app
       return;
     }
 
-    users.delete(dbID);
+    users.delete(userID);
 
-    res.json({ message: `${user.name}님 언젠가 다시 만나요.` });
+    res.status(200).json({ message: `${user.name}님 언젠가 다시 만나요.` });
   });
+
+module.exports = router;
