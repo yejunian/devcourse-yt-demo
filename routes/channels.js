@@ -1,8 +1,11 @@
 const express = require('express');
 const router = express.Router();
 
+const conn = require('../mariadb');
+
 router.use(express.json());
 
+// TODO - 인메모리 DB를 외부 DB로 교체 (PUT /:id, DELETE /:id)
 /** @type {Map<number, { title: string, userID: string }>} */
 const channels = new Map();
 let id = 1;
@@ -11,50 +14,61 @@ router
   .route('/')
 
   .get((req, res) => {
-    const { userID } = req.body || {};
+    const userID = parseInt(req.body.userID);
 
-    if (!userID) {
-      res.status(401).json({
-        message: '로그인이 필요합니다.',
+    if (isNaN(userID)) {
+      res.status(400).json({
+        message: '사용자 정보가 올바르지 않습니다.',
       });
       return;
     }
 
-    if (!channels.size) {
-      notFoundChannel(res);
-      return;
-    }
-
-    let allChannels = [];
-
-    channels.forEach((channel) => {
-      if (channel.userID === userID) {
-        allChannels.push(channel);
+    const sql = 'SELECT * FROM `channels` WHERE `user_id` = ?';
+    const values = [userID];
+    conn.query(sql, values, (err, results) => {
+      if (!results?.length) {
+        notFoundChannel(res);
+        return;
       }
+
+      res.status(200).json(results);
     });
-
-    if (!allChannels.length) {
-      notFoundChannel(res);
-      return;
-    }
-
-    res.status(200).json(allChannels);
   })
 
   .post((req, res) => {
-    const { title, userID } = req.body || {};
+    const { name } = req.body || {};
+    const userID = parseInt(req.body.userID);
 
-    if (title && userID) {
-      channels.set(id++, { title, userID });
-
-      res.status(201).json({
-        message: `${title} 채널의 성장을 응원합니다.`,
-      });
-    } else {
+    if (!name || isNaN(userID)) {
       res
         .status(400)
         .json({ message: '채널 이름과 사용자 아이디를 입력하세요.' });
+      return;
     }
+
+    const sql = 'INSERT INTO `channels` (`name`, `user_id`) VALUES (?, ?)';
+    const values = [name, userID];
+    conn.query(sql, values, (err, results) => {
+      if (err) {
+        switch (err.errno) {
+          case 1452:
+            res.status(400).json({
+              message: '사용자가 존재하지 않습니다.',
+            });
+            return;
+
+          default:
+            res.status(500).json({
+              message: '서버 내부 오류',
+            });
+            return;
+        }
+      }
+
+      res.status(201).json({
+        message: `${name} 채널의 성장을 응원합니다.`,
+      });
+    });
   });
 
 router
@@ -62,15 +76,20 @@ router
 
   .get((req, res) => {
     const id = parseInt(req.params.id);
-    const channel = channels.get(id);
 
-    if (channel) {
-      res.status(200).json(channel);
-    } else {
-      notFoundChannel(res);
-    }
+    const sql = 'SELECT * FROM `channels` WHERE `id` = ?';
+    const value = [id];
+    conn.query(sql, value, (err, result) => {
+      if (!result?.length) {
+        notFoundChannel(res);
+        return;
+      }
+
+      res.status(200).json(result[0]);
+    });
   })
 
+  // TODO - 인메모리 DB를 외부 DB로 교체
   .put((req, res) => {
     const id = parseInt(req.params.id);
     const { title } = req.body || {};
@@ -101,6 +120,7 @@ router
     });
   })
 
+  // TODO - 인메모리 DB를 외부 DB로 교체
   .delete((req, res) => {
     const id = parseInt(req.params.id);
     const channel = channels.get(id);

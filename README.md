@@ -7,6 +7,58 @@
 
 ---
 
+## 2024-05-10
+
+외부 DB를 연동하니, 점점 구성이 갖춰져 가는 것 같다.
+
+### 질문
+
+이메일+비밀번호를 조건에 함께 넣어서 조회하기 vs 이메일로 비밀번호를 가져와서 검사하기
+
+```javascript
+// 이메일+비밀번호를 조건에 함께 넣어서 조회하기
+router.post('/login', (req, res) => {
+  const { email, password } = req.body || {};
+  // ...
+  const sql = 'SELECT `name` FROM `users` WHERE `email` = ? AND `password` = ?';
+  const values = [email, password];
+  conn.query(sql, values, (err, results) => {
+    if (!results?.length) {
+      res
+        .status(401)
+        .json({ message: '아이디 또는 비밀번호가 일치하지 않습니다.' });
+      return;
+    }
+
+    res.status(200).json({ message: `${results[0].name}님 환영합니다.` });
+  });
+});
+```
+
+```javascript
+// 이메일로 비밀번호를 가져와서 검사하기
+router.post('/login', (req, res) => {
+  const { email, password } = req.body || {};
+  // ...
+  const sql = 'SELECT `name`, `password` FROM `users` WHERE `email` = ?';
+  const values = [email];
+  conn.query(sql, values, (err, results) => {
+    if (!results?.length || results[0].password !== password) {
+      res
+        .status(401)
+        .json({ message: '아이디 또는 비밀번호가 일치하지 않습니다.' });
+      return;
+    }
+
+    res.status(200).json({ message: `${results[0].name}님 환영합니다.` });
+  });
+});
+```
+
+어느 쪽이 나을까?
+
+---
+
 ## 2024-05-03
 
 `if`가 많이 중첩되는 부분은 강사님께서 잠깐 설명하신 early return으로 중첩을 풀었다. 이전에 찾아보았듯이, if에 부정 조건이 들어가더라도 보호 절(guard clause)을 적용하여 중첩을 없애는 쪽이 낫다고 한다.
