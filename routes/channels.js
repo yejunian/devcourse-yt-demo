@@ -10,9 +10,9 @@ const validate = (req, res, next) => {
   const err = validationResult(req);
 
   if (err.isEmpty()) {
-    next();
+    return next();
   } else {
-    res.status(400).json(err.array());
+    return res.status(400).json(err.array());
   }
 };
 
@@ -58,12 +58,6 @@ router
       .withMessage('채널 이름 name을 문자열로 입력하세요.'),
     validate,
     (req, res) => {
-      const err = validationResult(req);
-
-      if (!err.isEmpty()) {
-        return res.status(400).json(err.array());
-      }
-
       const { name } = req.body;
       const userID = parseInt(req.body.userID);
 
@@ -100,12 +94,6 @@ router
       .withMessage('채널 id를 숫자로 입력하세요.'),
     validate,
     (req, res) => {
-      const err = validationResult(req);
-
-      if (!err.isEmpty()) {
-        return res.status(400).json(err.array());
-      }
-
       const id = parseInt(req.params.id);
 
       const sql = 'SELECT * FROM `channels` WHERE `id` = ?';
@@ -170,12 +158,6 @@ router
       .withMessage('채널 id를 숫자로 입력하세요.'),
     validate,
     (req, res) => {
-      const err = validationResult(req);
-
-      if (!err.isEmpty()) {
-        return res.status(400).json(err.array());
-      }
-
       const id = parseInt(req.params.id);
 
       const sql = 'DELETE FROM `channels` WHERE `id` = ?';
