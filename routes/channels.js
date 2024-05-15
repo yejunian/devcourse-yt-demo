@@ -1,31 +1,24 @@
 const express = require('express');
-const { body, param, validationResult } = require('express-validator');
+const { body, param } = require('express-validator');
 
 const conn = require('../mariadb');
+const validate = require('../middlewares/validate');
 
 const router = express.Router();
 router.use(express.json());
-
-const validate = (req, res, next) => {
-  const err = validationResult(req);
-
-  if (err.isEmpty()) {
-    return next();
-  } else {
-    return res.status(400).json(err.array());
-  }
-};
 
 router
   .route('/')
 
   .get(
-    body('userID')
-      .notEmpty()
-      .withMessage('userID를 입력하세요.')
-      .isInt()
-      .withMessage('userID를 숫자로 입력하세요.'),
-    validate,
+    [
+      body('userID')
+        .notEmpty()
+        .withMessage('userID를 입력하세요.')
+        .isInt()
+        .withMessage('userID를 숫자로 입력하세요.'),
+      validate,
+    ],
     (req, res) => {
       const userID = parseInt(req.body.userID);
 
@@ -46,17 +39,19 @@ router
   )
 
   .post(
-    body('userID')
-      .notEmpty()
-      .withMessage('userID를 입력하세요.')
-      .isInt()
-      .withMessage('userID를 숫자로 입력하세요.'),
-    body('name')
-      .notEmpty()
-      .withMessage('채널 이름 name을 입력하세요.')
-      .isString()
-      .withMessage('채널 이름 name을 문자열로 입력하세요.'),
-    validate,
+    [
+      body('userID')
+        .notEmpty()
+        .withMessage('userID를 입력하세요.')
+        .isInt()
+        .withMessage('userID를 숫자로 입력하세요.'),
+      body('name')
+        .notEmpty()
+        .withMessage('채널 이름 name을 입력하세요.')
+        .isString()
+        .withMessage('채널 이름 name을 문자열로 입력하세요.'),
+      validate,
+    ],
     (req, res) => {
       const { name } = req.body;
       const userID = parseInt(req.body.userID);
@@ -87,12 +82,14 @@ router
   .route('/:id')
 
   .get(
-    param('id')
-      .notEmpty()
-      .withMessage('채널 id를 입력하세요.')
-      .matches(/^[0-9]+$/)
-      .withMessage('채널 id를 숫자로 입력하세요.'),
-    validate,
+    [
+      param('id')
+        .notEmpty()
+        .withMessage('채널 id를 입력하세요.')
+        .matches(/^[0-9]+$/)
+        .withMessage('채널 id를 숫자로 입력하세요.'),
+      validate,
+    ],
     (req, res) => {
       const id = parseInt(req.params.id);
 
@@ -113,17 +110,19 @@ router
   )
 
   .put(
-    param('id')
-      .notEmpty()
-      .withMessage('채널 id를 입력하세요.')
-      .matches(/^[0-9]+$/)
-      .withMessage('채널 id를 숫자로 입력하세요.'),
-    body('name')
-      .notEmpty()
-      .withMessage('채널명을 입력하세요.')
-      .isString()
-      .withMessage('채널명을 문자열로 입력하세요.'),
-    validate,
+    [
+      param('id')
+        .notEmpty()
+        .withMessage('채널 id를 입력하세요.')
+        .matches(/^[0-9]+$/)
+        .withMessage('채널 id를 숫자로 입력하세요.'),
+      body('name')
+        .notEmpty()
+        .withMessage('채널명을 입력하세요.')
+        .isString()
+        .withMessage('채널명을 문자열로 입력하세요.'),
+      validate,
+    ],
     (req, res) => {
       const id = parseInt(req.params.id);
       const { name } = req.body;
@@ -151,12 +150,14 @@ router
   )
 
   .delete(
-    param('id')
-      .notEmpty()
-      .withMessage('채널 id를 입력하세요.')
-      .matches(/^[0-9]+$/)
-      .withMessage('채널 id를 숫자로 입력하세요.'),
-    validate,
+    [
+      param('id')
+        .notEmpty()
+        .withMessage('채널 id를 입력하세요.')
+        .matches(/^[0-9]+$/)
+        .withMessage('채널 id를 숫자로 입력하세요.'),
+      validate,
+    ],
     (req, res) => {
       const id = parseInt(req.params.id);
 

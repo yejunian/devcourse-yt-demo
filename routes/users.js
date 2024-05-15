@@ -1,24 +1,13 @@
-const dotenv = require('dotenv');
 const express = require('express');
-const { body, validationResult } = require('express-validator');
+const { body } = require('express-validator');
 const jwt = require('jsonwebtoken');
 
+const envConfig = require('../config/env');
 const conn = require('../mariadb');
-
-dotenv.config();
+const validate = require('../middlewares/validate');
 
 const router = express.Router();
 router.use(express.json());
-
-const validate = (req, res, next) => {
-  const err = validationResult(req);
-
-  if (err.isEmpty()) {
-    return next();
-  } else {
-    return res.status(400).json(err.array());
-  }
-};
 
 router.post(
   '/login',
@@ -38,9 +27,8 @@ router.post(
   (req, res) => {
     const { email, password } = req.body;
 
-    // 여기서 이메일+비밀번호를 한번에 검사하나, 아니면 이메일로 비밀번호를 가져오나?
     const sql =
-      'SELECT `name` FROM `users` WHERE `email` = ? AND `password` = ?';
+      'SELECT `email`, `name` FROM `users` WHERE `email` = ? AND `password` = ?';
     const values = [email, password];
     conn.query(sql, values, (err, results) => {
       if (err) {
@@ -51,19 +39,18 @@ router.post(
 
       if (results?.length) {
         const token = jwt.sign(
-          {
-            email: user.email,
-            name: user.name,
-          },
-          process.env.JWT_SECRET
+          { email: user.email, name: user.name },
+          envConfig.jwt.secret,
+          { expiresIn: '1m', issuer: 'yejunian' }
         );
 
+        res.cookie('token', token, { httpOnly: true });
+
         return res.status(200).json({
-          token, // TODO - 내일 강의 내용: Body 말고 쿠키에 실어서 보내기
           message: `${results[0].name}님 환영합니다.`,
         });
       } else {
-        return res.status(404).json({
+        return res.status(403).json({
           message: '이메일 또는 비밀번호가 일치하지 않습니다.',
         });
       }

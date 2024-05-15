@@ -1,10 +1,12 @@
 const express = require('express');
-const app = express();
 
-app.listen(7777);
-
-const userRouter = require('./routes/users');
 const channelRouter = require('./routes/channels');
+const userRouter = require('./routes/users');
+const envConfig = require('./config/env');
+
+const app = express();
 
 app.use('/', userRouter);
 app.use('/channels', channelRouter);
+
+app.listen(envConfig.express.port);
